@@ -1,0 +1,16 @@
+{
+    "cmake.cmakePath": "/usr/bin/cmake",
+    "cmake.configureSettings": {
+        "CMAKE_C_COMPILER": "/usr/bin/clang",
+        "CMAKE_CXX_COMPILER": "/usr/bin/clang++"
+    },
+    "files.associations": {
+        "*.cpp": "cpp",
+        "*.hpp": "cpp"
+    },
+    "editor.formatOnSave": true,
+    "editor.defaultFormatter": "llvm-vs-code-extensions.vscode-clangd",
+    "[cpp]": {
+        "editor.defaultFormatter": "llvm-vs-code-extensions.vscode-clangd"
+    }
+}
