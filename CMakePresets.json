@@ -2,12 +2,16 @@
   "version": 3,
   "configurePresets": [
     {
-      "name": "linux-ninja",
+      "name": "linux-clang-cuda",
       "generator": "Ninja",
       "binaryDir": "${sourceDir}/build",
       "cacheVariables": {
         "CMAKE_C_COMPILER": "/usr/bin/clang",
-        "CMAKE_CXX_COMPILER": "/usr/bin/clang++"
+        "CMAKE_CXX_COMPILER": "/usr/bin/clang++",
+        "CMAKE_CUDA_HOST_COMPILER": "/usr/bin/clang++",
+        "AMReX_GPU_BACKEND": "CUDA",
+        "CMAKE_CUDA_ARCHITECTURES": "89",
+        "AMReX_DIFFERENT_COMPILER": "ON"
       }
     }
   ]

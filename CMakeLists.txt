@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.15)
 
-project(DiffusionAMReX CXX)
+project(DiffusionAMReX CXX CUDA)
 
 # Set output directory to bin/ in the project root
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin)
@@ -33,6 +33,8 @@ file(GLOB_RECURSE HEADERS "src/*.hpp")
 
 # 3. Create your target
 add_executable(diffusion-amrex ${SOURCES} ${HEADERS})
+
+set_source_files_properties(src/main.cpp PROPERTIES LANGUAGE CUDA)
 
 # 4. Include directories and link
 target_include_directories(diffusion-amrex PRIVATE src)

@@ -2,7 +2,10 @@
     "cmake.cmakePath": "/usr/bin/cmake",
     "cmake.configureSettings": {
         "CMAKE_C_COMPILER": "/usr/bin/clang",
-        "CMAKE_CXX_COMPILER": "/usr/bin/clang++"
+        "CMAKE_CXX_COMPILER": "/usr/bin/clang++",
+        "CMAKE_CUDA_COMPILER": "/usr/bin/clang++",
+        "CMAKE_CUDA_HOST_COMPILER": "/usr/bin/clang++",
+        "AMReX_GPU_BACKEND": "CUDA"
     },
     "files.associations": {
         "*.cpp": "cpp",
