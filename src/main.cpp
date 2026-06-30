@@ -1,10 +1,15 @@
 #include <AMReX.H>
 #include <AMReX_Print.H>
 
+#include "AMReX_Cluster.H"
 #include "AMReX_Geometry.H"
 #include "AMReX_IntVect.H"
+#include "AMReX_MakeType.H"
 #include "AMReX_MultiFab.H"
 #include "AMReX_RealBox.H"
+#include "AMReX_TagBox.H"
+#include "AMReX_iMultiFab.H"
+#include <AMReX_TagBox.H>
 
 #include <AMReX_PlotFileUtil.H>
 
@@ -41,8 +46,9 @@ int main(int argc, char *argv[]) {
 
     // produe a BoxArray to store all the smaller boxes the large box is chopped
     // up into
+    int max_block_size = 32;
     amrex::BoxArray ba(domain);
-    ba.maxSize(32);
+    ba.maxSize(max_block_size);
 
     // initialise the DistributionMapping for MPI distribution (trivial on one
     // device)
@@ -77,12 +83,56 @@ int main(int argc, char *argv[]) {
         });
     }
 
+    // tagging for refinement
+    amrex::TagBoxArray mf_tags(ba, dm);
+
+    amrex::Real threshold = 0.01;
+
+    for (amrex::MFIter mfi(mf); mfi.isValid(); ++mfi) {
+        const amrex::Box &box = mfi.validbox();
+
+        const amrex::Array4<amrex::Real> &arr = mf.array(mfi);
+        const auto &tags_arr = mf_tags.array(mfi);
+
+        amrex::ParallelFor(box, [=] AMREX_GPU_DEVICE(int i, int j, int k) {
+            // compute gradient
+            amrex::Real df_dx = arr(i + 1, j, k, 0) - arr(i - 1, j, k, 0);
+            amrex::Real df_dy = arr(i, j + 1, k, 0) - arr(i, j - 1, k, 0);
+            amrex::Real df_dz = arr(i, j, k + 1, 0) - arr(i, j, k - 1, 0);
+
+            amrex::Real grad_norm =
+                std::sqrt(df_dx * df_dx + df_dy * df_dy + df_dz * df_dz);
+
+            tags_arr(amrex::IntVect(i, j, k)) = grad_norm > threshold
+                                                    ? amrex::TagBox::SET
+                                                    : amrex::TagBox::CLEAR;
+        });
+    }
+
     // export to disk for viewer
     fs::path rawOutputPath("raw");
 
     amrex::Vector<std::string> var_names = {"f(x,y,z)"};
     amrex::WriteSingleLevelPlotfile(rawOutputPath / "export", mf, var_names,
                                     geom, 0.0, 0);
+
+    amrex::MultiFab mf_tags_real(ba, dm, 1, 0);
+
+    for (amrex::MFIter mfi(mf_tags); mfi.isValid(); ++mfi) {
+        const auto &tag_arr = mf_tags.array(mfi);
+        const auto &tag_real_arr = mf_tags_real.array(mfi);
+
+        amrex::ParallelFor(mfi.validbox(), [=] AMREX_GPU_DEVICE(int i, int j,
+                                                                int k) {
+            tag_real_arr(i, j, k, 0) =
+                tag_arr(amrex::IntVect(i, j, k)) == amrex::TagBox::SET ? 1.0
+                                                                       : 0.0;
+        });
+    }
+
+    amrex::Vector<std::string> tags_var_names = {"|∇f(x,y,z)| > threshold"};
+    amrex::WriteSingleLevelPlotfile(rawOutputPath / "tags", mf_tags_real,
+                                    tags_var_names, geom, 0.0, 0);
 
     // Clean up resources
     amrex::Finalize();
